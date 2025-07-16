@@ -3,6 +3,7 @@ import LoginPage from '@/components/LoginPage';
 import DashboardPage from '@/components/DashboardPage';
 import ReportPage from '@/components/ReportPage';
 import AlertsPage from '@/components/AlertsPage';
+import AlertSystemPage from '@/components/AlertSystemPage';
 import HelpPage from '@/components/HelpPage';
 import Navigation from '@/components/Navigation';
 
@@ -17,11 +18,13 @@ const Index = () => {
   const renderCurrentPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <DashboardPage />;
+        return <DashboardPage onPageChange={setCurrentPage} />;
       case 'report':
         return <ReportPage />;
       case 'alerts':
         return <AlertsPage />;
+      case 'alert-system':
+        return <AlertSystemPage />;
       case 'help':
         return <HelpPage />;
       default:

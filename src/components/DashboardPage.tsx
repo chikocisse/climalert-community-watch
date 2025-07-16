@@ -1,5 +1,6 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,14 +16,16 @@ import {
   Users
 } from 'lucide-react';
 
-const mockReports = [
+const allMockReports = [
   {
     id: 1,
     location: 'Dakar Plateau',
     type: 'Canicule',
     severity: 4,
     time: '14:30',
-    status: 'verified'
+    status: 'verified',
+    category: 'heat',
+    date: 'today'
   },
   {
     id: 2,
@@ -30,7 +33,9 @@ const mockReports = [
     type: 'Inondation',
     severity: 3,
     time: '12:15',
-    status: 'pending'
+    status: 'pending',
+    category: 'flood',
+    date: 'today'
   },
   {
     id: 3,
@@ -38,7 +43,39 @@ const mockReports = [
     type: 'Vent fort',
     severity: 2,
     time: '10:45',
-    status: 'verified'
+    status: 'verified',
+    category: 'wind',
+    date: 'today'
+  },
+  {
+    id: 4,
+    location: 'Saint-Louis',
+    type: 'Canicule',
+    severity: 5,
+    time: '16:20',
+    status: 'verified',
+    category: 'heat',
+    date: 'week'
+  },
+  {
+    id: 5,
+    location: 'Kaolack',
+    type: 'Inondation',
+    severity: 4,
+    time: '08:30',
+    status: 'pending',
+    category: 'flood',
+    date: 'week'
+  },
+  {
+    id: 6,
+    location: 'Ziguinchor',
+    type: 'Vent fort',
+    severity: 3,
+    time: '11:15',
+    status: 'verified',
+    category: 'wind',
+    date: 'month'
   }
 ];
 
@@ -48,9 +85,38 @@ const weatherData = [
   { region: 'Saint-Louis', temp: '29°C', risk: 'Faible' }
 ];
 
-export default function DashboardPage() {
+interface DashboardPageProps {
+  onPageChange?: (page: string) => void;
+}
+
+export default function DashboardPage({ onPageChange }: DashboardPageProps = {}) {
   const [selectedFilter, setSelectedFilter] = useState('all');
   const [selectedDate, setSelectedDate] = useState('today');
+
+  // Filtrer les données selon les filtres sélectionnés
+  const filteredReports = useMemo(() => {
+    return allMockReports.filter(report => {
+      const matchesType = selectedFilter === 'all' || report.category === selectedFilter;
+      const matchesDate = report.date === selectedDate || 
+        (selectedDate === 'week' && (report.date === 'today' || report.date === 'week')) ||
+        (selectedDate === 'month' && (report.date === 'today' || report.date === 'week' || report.date === 'month'));
+      return matchesType && matchesDate;
+    });
+  }, [selectedFilter, selectedDate]);
+
+  // Calculer les métriques dynamiques
+  const metrics = useMemo(() => {
+    const todayReports = allMockReports.filter(r => r.date === 'today');
+    const verifiedReports = filteredReports.filter(r => r.status === 'verified');
+    const averageSeverity = filteredReports.reduce((acc, r) => acc + r.severity, 0) / filteredReports.length || 0;
+    
+    return {
+      todayReports: todayReports.length,
+      alertsSent: Math.floor(verifiedReports.length * 1.5),
+      activeUsers: 1247 + Math.floor(filteredReports.length * 10),
+      maxTemp: Math.max(34, 30 + Math.floor(averageSeverity))
+    };
+  }, [filteredReports]);
 
   const getSeverityColor = (level: number) => {
     if (level <= 2) return 'bg-success text-success-foreground';
@@ -64,8 +130,10 @@ export default function DashboardPage() {
     return 'text-destructive';
   };
 
-  const sendAlert = () => {
-    console.log('Alerte envoyée aux clients');
+  const handleSendAlert = () => {
+    if (onPageChange) {
+      onPageChange('alert-system');
+    }
   };
 
   return (
@@ -78,7 +146,7 @@ export default function DashboardPage() {
             <p className="text-muted-foreground">Surveillance en temps réel des événements climatiques</p>
           </div>
           <Button 
-            onClick={sendAlert}
+            onClick={handleSendAlert}
             className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
           >
             <Bell className="w-4 h-4 mr-2" />
@@ -147,7 +215,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Signalements aujourd'hui</p>
-                  <p className="text-3xl font-bold text-foreground">23</p>
+                  <p className="text-3xl font-bold text-foreground">{metrics.todayReports}</p>
                 </div>
                 <AlertTriangle className="w-8 h-8 text-warning" />
               </div>
@@ -159,7 +227,7 @@ export default function DashboardPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Alertes envoyées</p>
-                  <p className="text-3xl font-bold text-foreground">12</p>
+                  <p className="text-3xl font-bold text-foreground">{metrics.alertsSent}</p>
                 </div>
                 <Bell className="w-8 h-8 text-destructive" />
               </div>
@@ -202,7 +270,7 @@ export default function DashboardPage() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                {mockReports.map((report) => (
+                {filteredReports.map((report) => (
                   <div key={report.id} className="flex items-center justify-between p-3 bg-accent rounded-lg">
                     <div className="flex-1">
                       <p className="font-medium">{report.location}</p>
