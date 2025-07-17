@@ -82,17 +82,47 @@ const mockReports: Report[] = [
 
 const API_KEY = '6acd425a7fd67ac645bc8d6e2774150d';
 
+// Données de fallback en cas d'erreur API
+const fallbackWeatherData: WeatherData[] = [
+  {
+    name: 'Dakar',
+    coord: { lat: 14.6937, lon: -17.4441 },
+    main: { temp: 34, humidity: 65, feels_like: 38 },
+    weather: [{ main: 'Clear', description: 'ciel dégagé', icon: '01d' }],
+    wind: { speed: 12 },
+    visibility: 10000
+  },
+  {
+    name: 'Thiès',
+    coord: { lat: 14.7886, lon: -16.9246 },
+    main: { temp: 31, humidity: 70, feels_like: 34 },
+    weather: [{ main: 'Clouds', description: 'nuageux', icon: '03d' }],
+    wind: { speed: 8 },
+    visibility: 8000
+  },
+  {
+    name: 'Saint-Louis',
+    coord: { lat: 16.0366, lon: -16.4894 },
+    main: { temp: 29, humidity: 75, feels_like: 32 },
+    weather: [{ main: 'Clear', description: 'ciel dégagé', icon: '01d' }],
+    wind: { speed: 6 },
+    visibility: 10000
+  }
+];
+
 export default function InteractiveMap() {
-  const [weatherData, setWeatherData] = useState<WeatherData[]>([]);
+  const [weatherData, setWeatherData] = useState<WeatherData[]>(fallbackWeatherData);
   const [selectedRegion, setSelectedRegion] = useState<string>('all');
   const [selectedRiskType, setSelectedRiskType] = useState<string>('all');
   const [isLoading, setIsLoading] = useState(false);
   const [lastUpdate, setLastUpdate] = useState<Date>(new Date());
+  const [apiError, setApiError] = useState<boolean>(false);
 
   const fetchWeatherData = async () => {
     setIsLoading(true);
+    setApiError(false);
     try {
-      const weatherPromises = senegalRegions.map(async (region) => {
+      const weatherPromises = senegalRegions.slice(0, 3).map(async (region) => {
         const response = await fetch(
           `https://api.openweathermap.org/data/2.5/weather?lat=${region.lat}&lon=${region.lon}&appid=${API_KEY}&units=metric&lang=fr`
         );
@@ -103,8 +133,12 @@ export default function InteractiveMap() {
       const results = await Promise.all(weatherPromises);
       setWeatherData(results);
       setLastUpdate(new Date());
+      setApiError(false);
     } catch (error) {
       console.error('Erreur lors de la récupération des données météo:', error);
+      setApiError(true);
+      // Garder les données de fallback en cas d'erreur
+      setWeatherData(fallbackWeatherData);
     } finally {
       setIsLoading(false);
     }
@@ -181,6 +215,13 @@ export default function InteractiveMap() {
           </CardTitle>
         </CardHeader>
         <CardContent>
+          {apiError && (
+            <div className="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded-lg">
+              <p className="text-sm text-yellow-800">
+                ⚠️ Données météo de démonstration utilisées (problème d'accès à l'API)
+              </p>
+            </div>
+          )}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
             <div>
               <label className="text-sm font-medium">Région</label>
