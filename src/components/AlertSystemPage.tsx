@@ -95,6 +95,67 @@ export default function AlertPage() {
     setChannels(prev => ({ ...prev, [channel]: !prev[channel] }));
   };
 
+  const getPersonalizedMessage = (target: string) => {
+    const baseAdvice = actionAdvice || "Suivez les consignes de sécurité.";
+    
+    switch (target) {
+      case 'pregnant':
+        return `${baseAdvice} Hydratez-vous régulièrement et évitez les efforts physiques intenses. Consultez votre médecin en cas de malaise.`;
+      case 'elderly':
+        return `${baseAdvice} Restez dans des lieux frais, hydratez-vous fréquemment et ne sortez pas aux heures les plus chaudes (12h-16h).`;
+      case 'children':
+        return `${baseAdvice} Surveillez vos enfants, assurez-vous qu'ils boivent régulièrement et évitez les activités extérieures prolongées.`;
+      case 'workers':
+        return `${baseAdvice} Aménagez des pauses fréquentes, buvez de l'eau toutes les 15-20 minutes et portez des vêtements de protection adaptés.`;
+      case 'chronic':
+        return `${baseAdvice} Suivez scrupuleusement votre traitement médical, contactez votre médecin en cas de symptômes et évitez toute exposition aux risques.`;
+      default:
+        return baseAdvice;
+    }
+  };
+
+  const estimateReach = () => {
+    const regionPopulation = {
+      'Dakar': 3732000,
+      'Thiès': 1788000,
+      'Saint-Louis': 1040000,
+      'Kaolack': 960000,
+      'Ziguinchor': 549000,
+      'Diourbel': 1497000,
+      'Fatick': 714000,
+      'Kolda': 662000,
+      'Louga': 874000,
+      'Matam': 562000,
+      'Sédhiou': 452000,
+      'Tambacounda': 678000,
+      'Kaffrine': 566000,
+      'Kédougou': 151000
+    };
+
+    let totalReach = 0;
+    selectedRegions.forEach(region => {
+      const population = regionPopulation[region as keyof typeof regionPopulation] || 500000;
+      
+      // Facteur de ciblage par groupe vulnérable
+      let targetFactor = 1;
+      if (selectedTargets.length > 0 && !selectedTargets.includes('all')) {
+        const groupFactors = {
+          'pregnant': 0.04,
+          'elderly': 0.08,
+          'children': 0.25,
+          'workers': 0.30,
+          'chronic': 0.15
+        };
+        targetFactor = selectedTargets.reduce((acc, target) => 
+          acc + (groupFactors[target as keyof typeof groupFactors] || 0), 0);
+      }
+      
+      totalReach += Math.floor(population * targetFactor * 0.8); // 80% de taux de couverture mobile
+    });
+
+    return totalReach;
+  };
+
   const handleSendAlert = () => {
     if (!alertType || !title || !message || selectedRegions.length === 0) {
       toast({
@@ -105,16 +166,26 @@ export default function AlertPage() {
       return;
     }
 
+    const estimatedReach = estimateReach();
+    const personalizedMessages = selectedTargets.length > 0 
+      ? selectedTargets.reduce((acc, target) => {
+          acc[target] = getPersonalizedMessage(target);
+          return acc;
+        }, {} as Record<string, string>)
+      : { general: message };
+
     // Simulation d'envoi d'alerte
     const alertData = {
       type: alertType,
       severity,
       title,
       message,
+      personalizedMessages,
       actionAdvice,
       regions: selectedRegions,
       targets: selectedTargets,
       channels,
+      estimatedReach,
       scheduled: isScheduled ? scheduledTime : null,
       timestamp: new Date().toISOString()
     };
@@ -123,7 +194,7 @@ export default function AlertPage() {
     
     toast({
       title: "Alerte envoyée avec succès",
-      description: `Alerte de niveau ${severity} envoyée à ${selectedRegions.length} région(s)`,
+      description: `Alerte de niveau ${severity} envoyée à ${selectedRegions.length} région(s) - Portée estimée: ${estimatedReach.toLocaleString()} personnes`,
     });
   };
 
@@ -407,8 +478,71 @@ export default function AlertPage() {
                   <strong>{selectedAlertType.label}</strong> - Niveau {severity} 
                   {selectedRegions.length > 0 && ` • ${selectedRegions.length} région(s) ciblée(s)`}
                   {selectedTargets.length > 0 && ` • ${selectedTargets.length} groupe(s) cible(s)`}
+                  {selectedRegions.length > 0 && (
+                    <div className="mt-2">
+                      <strong>Portée estimée:</strong> {estimateReach().toLocaleString()} personnes
+                    </div>
+                  )}
                 </AlertDescription>
               </Alert>
+            )}
+
+            {/* Aperçu des messages personnalisés */}
+            {selectedTargets.length > 0 && actionAdvice && (
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle className="text-base">Messages personnalisés par groupe</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {selectedTargets.map(target => (
+                    <div key={target} className="p-3 bg-accent rounded-lg">
+                      <div className="font-medium text-sm mb-1">
+                        {targetGroups.find(g => g.id === target)?.label}
+                      </div>
+                      <div className="text-sm text-muted-foreground">
+                        {getPersonalizedMessage(target)}
+                      </div>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Canaux de diffusion sélectionnés */}
+            {Object.entries(channels).some(([_, enabled]) => enabled) && (
+              <Card className="mb-4">
+                <CardHeader>
+                  <CardTitle className="text-base">Canaux de diffusion sélectionnés</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="flex gap-2 flex-wrap">
+                    {channels.sms && (
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <Phone className="w-3 h-3" />
+                        SMS
+                      </Badge>
+                    )}
+                    {channels.push && (
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <Send className="w-3 h-3" />
+                        Push
+                      </Badge>
+                    )}
+                    {channels.voice && (
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <Phone className="w-3 h-3" />
+                        Vocal
+                      </Badge>
+                    )}
+                    {channels.email && (
+                      <Badge variant="outline" className="flex items-center gap-1">
+                        <Mail className="w-3 h-3" />
+                        Email
+                      </Badge>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
             )}
             
             <div className="flex gap-4">

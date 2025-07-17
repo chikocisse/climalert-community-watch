@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   AlertTriangle, 
   Bell, 
@@ -13,8 +14,11 @@ import {
   TrendingUp,
   Thermometer,
   CloudRain,
-  Users
+  Users,
+  Map
 } from 'lucide-react';
+import TrendsChart from './TrendsChart';
+import InteractiveMap from './InteractiveMap';
 
 const allMockReports = [
   {
@@ -319,24 +323,27 @@ export default function DashboardPage({ onPageChange }: DashboardPageProps = {})
           </Card>
         </div>
 
-        {/* Zone de carte interactive (placeholder) */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <TrendingUp className="w-5 h-5" />
-              Carte interactive des signalements
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="h-64 bg-accent rounded-lg flex items-center justify-center">
-              <div className="text-center text-muted-foreground">
-                <MapPin className="w-12 h-12 mx-auto mb-2" />
-                <p className="font-medium">Carte interactive</p>
-                <p className="text-sm">Visualisation géographique des événements en temps réel</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+        {/* Données avancées avec onglets */}
+        <Tabs defaultValue="trends" className="space-y-4">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="trends" className="flex items-center gap-2">
+              <TrendingUp className="w-4 h-4" />
+              Tendances
+            </TabsTrigger>
+            <TabsTrigger value="map" className="flex items-center gap-2">
+              <Map className="w-4 h-4" />
+              Carte interactive
+            </TabsTrigger>
+          </TabsList>
+          
+          <TabsContent value="trends">
+            <TrendsChart selectedFilter={selectedFilter} selectedDate={selectedDate} />
+          </TabsContent>
+          
+          <TabsContent value="map">
+            <InteractiveMap />
+          </TabsContent>
+        </Tabs>
       </div>
     </div>
   );
