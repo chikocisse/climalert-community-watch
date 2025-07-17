@@ -255,59 +255,58 @@ export default function InteractiveMap() {
                   data.wind.speed
                 );
                 
-                return (
-                  <React.Fragment key={data.name}>
-                    <Circle
-                      center={[data.coord.lat, data.coord.lon]}
-                      radius={20000}
-                      fillColor={getRiskColor(riskLevel)}
-                      fillOpacity={0.3}
-                      stroke={true}
-                      color={getRiskColor(riskLevel)}
-                      weight={2}
-                    />
-                    <Marker position={[data.coord.lat, data.coord.lon]}>
-                      <Popup>
-                        <div className="p-2 min-w-48">
-                          <h3 className="font-bold text-base mb-2">{data.name}</h3>
-                          <div className="space-y-1 text-sm">
-                            <div className="flex justify-between">
-                              <span>Température:</span>
-                              <span className="font-medium">{Math.round(data.main.temp)}°C</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Ressenti:</span>
-                              <span>{Math.round(data.main.feels_like)}°C</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Humidité:</span>
-                              <span>{data.main.humidity}%</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Vent:</span>
-                              <span>{Math.round(data.wind.speed * 3.6)} km/h</span>
-                            </div>
-                            <div className="flex justify-between">
-                              <span>Conditions:</span>
-                              <span className="capitalize">{data.weather[0].description}</span>
-                            </div>
-                            <div className="mt-2 pt-2 border-t">
-                              <Badge 
-                                className={`text-white ${
-                                  riskLevel === 'critique' ? 'bg-red-500' :
-                                  riskLevel === 'moderé' ? 'bg-orange-500' : 'bg-green-500'
-                                }`}
-                              >
-                                Risque {riskLevel}
-                              </Badge>
-                            </div>
+                return [
+                  <Circle
+                    key={`circle-${data.name}`}
+                    center={[data.coord.lat, data.coord.lon]}
+                    radius={20000}
+                    fillColor={getRiskColor(riskLevel)}
+                    fillOpacity={0.3}
+                    stroke={true}
+                    color={getRiskColor(riskLevel)}
+                    weight={2}
+                  />,
+                  <Marker key={`marker-${data.name}`} position={[data.coord.lat, data.coord.lon]}>
+                    <Popup>
+                      <div className="p-2 min-w-48">
+                        <h3 className="font-bold text-base mb-2">{data.name}</h3>
+                        <div className="space-y-1 text-sm">
+                          <div className="flex justify-between">
+                            <span>Température:</span>
+                            <span className="font-medium">{Math.round(data.main.temp)}°C</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Ressenti:</span>
+                            <span>{Math.round(data.main.feels_like)}°C</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Humidité:</span>
+                            <span>{data.main.humidity}%</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Vent:</span>
+                            <span>{Math.round(data.wind.speed * 3.6)} km/h</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Conditions:</span>
+                            <span className="capitalize">{data.weather[0].description}</span>
+                          </div>
+                          <div className="mt-2 pt-2 border-t">
+                            <Badge 
+                              className={`text-white ${
+                                riskLevel === 'critique' ? 'bg-red-500' :
+                                riskLevel === 'moderé' ? 'bg-orange-500' : 'bg-green-500'
+                              }`}
+                            >
+                              Risque {riskLevel}
+                            </Badge>
                           </div>
                         </div>
-                      </Popup>
-                    </Marker>
-                  </React.Fragment>
-                );
-              })}
+                      </div>
+                    </Popup>
+                  </Marker>
+                ];
+              }).flat()}
 
               {/* Signalements d'événements */}
               {filteredReports.map((report) => (
