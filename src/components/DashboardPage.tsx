@@ -18,7 +18,7 @@ import {
   Map
 } from 'lucide-react';
 import TrendsChart from './TrendsChart';
-import InteractiveMap from './InteractiveMap';
+import SimpleMap from './SimpleMap';
 
 const allMockReports = [
   {
@@ -341,7 +341,7 @@ export default function DashboardPage({ onPageChange }: DashboardPageProps = {})
           </TabsContent>
           
           <TabsContent value="map">
-            <InteractiveMap />
+            <SimpleMap />
           </TabsContent>
         </Tabs>
       </div>
